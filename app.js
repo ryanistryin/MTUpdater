@@ -9,7 +9,7 @@ var range = iprange('172.16.1.253/32');
 var PORT = 8291
 var MTMinimumVersion = '6408'
 var username = 'admin'
-var password = 'p3rs1anf1r3'
+var password = ''
 
 
 for (let index = 0; index < range.length; index++) {
