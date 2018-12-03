@@ -1,7 +1,7 @@
 var portscanner = require('portscanner')
 var iprange = require('iprange');
 var client = require('scp2')
-
+var version = require('./supportedFirmware.js')
 
 
 
@@ -10,6 +10,9 @@ var PORT = 8291
 var MTMinimumVersion = '6408'
 var username = 'admin'
 var password = ''
+
+
+console.log(version)
 
 
 for (let index = 0; index < range.length; index++) {
@@ -25,27 +28,30 @@ for (let index = 0; index < range.length; index++) {
                     console.log('HOST[' + range[index] + '],RouterOS version:' + MTDetailsResult.version)
                     console.log('HOST[' + range[index] + '],RouterOS platform:' + MTDetailsResult.platform)
 
+                    if (version.supported.indexOf(MTDetails.version) > 0) {
+                        if (MTDetailsResult.version < MTMinimumVersion) {
+                            var platform = MTDetailsResult.platform
+                            //device needs to be upgraded.
+                            MTUpdate(range[index], username, password, platform, function (err) {
+                                if (err) {
+                                    console.log('HOST[' + range[index] + '], unable to upload software for this host, platform[' + platform + ']', err)
+                                } else {
+                                    MTReboot(range[index], username, password, platform, function (err) {
+                                        if (err) {
+                                            console.log('HOST[' + range[index] + '], unable to reboot host', err)
+                                        } else {
+                                            console.log('HOST[' + range[index] + '] software uploaded & device is rebooting!', )
+                                        }
+                                    })
 
-                    if (MTDetailsResult.version < MTMinimumVersion) {
-                        var platform = MTDetailsResult.platform
-                        //device needs to be upgraded.
-                        MTUpdate(range[index], username, password, platform, function (err) {
-                            if (err) {
-                                console.log('HOST[' + range[index] + '], unable to upload software for this host, platform[' + platform + ']', err)
-                            } else {
-                                MTReboot(range[index], username, password, platform, function (err) {
-                                    if (err) {
-                                        console.log('HOST[' + range[index] + '], unable to reboot host', err)
-                                    } else {
-                                        console.log('HOST[' + range[index] + '] software uploaded & device is rebooting!', )
-                                    }
-                                })
-
-                            }
-                        })
+                                }
+                            })
+                        } else {
+                            //device is on a correct version
+                            console.log('HOST[' + range[index] + '],device is on the correct software version.', )
+                        }
                     } else {
-                        //device is on a correct version
-                        console.log('HOST[' + range[index] + '],device is on the correct software version.', )
+                        console.log('HOST[' + range[index] + '] will not upgraded as the version has not been tested yet')
                     }
                 }
             })
@@ -65,10 +71,19 @@ function MTDetails(ip, username, password, callback) {
 
     api.connect().then((client) => {
         client.menu("/system package print").getOnly().then((result) => {
-            console.log('#MTDetails => ',result); // Mikrotik
+            console.log('#MTDetails => ', result); // Mikrotik
             result.name = result.name.split('routeros-').join("");
-            api.close();
-            return callback(false, { version: result.version, platform: result.name })
+
+            client.menu("/system identity print").getOnly().then((result2) => {
+                console.log('#MTDetails => ', result2); // Mikrotik
+                api.close();
+                return callback(false, { version: result.version, platform: result.name, identity: result2.identity })
+
+            }).catch((err) => {
+                console.log(err)
+                return callback(err)
+            })
+
         }).catch((err) => {
             console.log(err); // Some error trying to get the identity
             return callback(err)
@@ -104,19 +119,19 @@ function MTReboot(ip, username, password, platform, callback) {
     api.connect().then((client) => {
         var rootMenu = client.menu("/system");
         rootMenu.exec("reboot", {})
-        .then((response) => {
-            // Backup done!
-            api.close();
-            api.disconnect();
-            console.log(response);
-            console.log('#MTReboot => Backup done')
-        }).catch((err) => {
-            api.close();
-            api.disconnect();
-            console.log('#MTReboot => Caught some error2')
-            // Error exporting or backing up
-            console.log(err);
-        });
+            .then((response) => {
+                // Backup done!
+                api.close();
+                api.disconnect();
+                console.log(response);
+                console.log('#MTReboot => Backup done')
+            }).catch((err) => {
+                api.close();
+                api.disconnect();
+                console.log('#MTReboot => Caught some error2')
+                // Error exporting or backing up
+                console.log(err);
+            });
 
 
     }).catch((err) => {
