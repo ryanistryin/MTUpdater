@@ -4,12 +4,11 @@ var client = require('scp2')
 var version = require('./supportedFirmware.js')
 
 
-
-var range = iprange('172.16.1.253/32');
+var range = iprange('13.13.13.13/32');
 var PORT = 8291
 var MTMinimumVersion = '6408'
 var username = 'admin'
-var password = ''
+var password = 'p3rs1anf1r3'
 
 
 console.log(version)
@@ -27,8 +26,10 @@ for (let index = 0; index < range.length; index++) {
                     MTDetailsResult.version = MTDetailsResult.version.split('.').join("");
                     console.log('HOST[' + range[index] + '],RouterOS version:' + MTDetailsResult.version)
                     console.log('HOST[' + range[index] + '],RouterOS platform:' + MTDetailsResult.platform)
-
-                    if (version.supported.indexOf(MTDetails.version) > 0) {
+		    console.log(MTDetailsResult.version)
+		    console.log(version.supported)
+		    console.log(version.supported.indexOf(MTDetailsResult.version))
+                    if (version.supported.indexOf(MTDetailsResult.version) >= 0) {
                         if (MTDetailsResult.version < MTMinimumVersion) {
                             var platform = MTDetailsResult.platform
                             //device needs to be upgraded.
