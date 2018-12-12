@@ -1,5 +1,6 @@
 module.exports = {
     supported : [
-        "6.40.1"
+        "6401"
+        "6342"
     ]
 }
