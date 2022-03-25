@@ -8,7 +8,7 @@ var range = iprange('13.13.13.13/32');
 var PORT = 8291
 var MTMinimumVersion = '6408'
 var username = 'admin'
-var password = 'p3rs1anf1r3'
+var password = 'password'
 
 
 console.log(version)
